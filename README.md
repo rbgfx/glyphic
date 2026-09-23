@@ -1,12 +1,17 @@
-# Glyphic
+<h1 align="center">Glyphic</h1>
 
-> Bitmap and outline font rendering for Ruby graphics.
+<p align="center">Bitmap and outline font rendering for Ruby graphics.</p>
 
-[![Gem version](https://badge.fury.io/rb/glyphic.svg)](https://rubygems.org/gems/glyphic) [![Downloads](https://img.shields.io/gem/dt/glyphic?label=downloads)](https://rubygems.org/gems/glyphic) [![Ruby](https://img.shields.io/badge/ruby-%3E%3D3.1-CC342D?logo=ruby&logoColor=white)](https://www.ruby-lang.org/) [![CI](https://github.com/rbgfx/glyphic/actions/workflows/main.yml/badge.svg)](https://github.com/rbgfx/glyphic/actions/workflows/main.yml) [![License](https://img.shields.io/badge/license-MIT-750014.svg)](LICENSE.txt)
+<p align="center">
+  <a href="https://rubygems.org/gems/glyphic"><img src="https://badge.fury.io/rb/glyphic.svg" alt="Gem Version"></a>
+  <a href="https://rubygems.org/gems/glyphic"><img src="https://img.shields.io/gem/dt/glyphic?label=downloads" alt="Downloads"></a>
+  <a href="https://www.ruby-lang.org/"><img src="https://img.shields.io/badge/ruby-%3E%3D3.1-CC342D?logo=ruby&amp;logoColor=white" alt="Ruby Version"></a>
+  <a href="LICENSE.txt"><img src="https://img.shields.io/badge/license-MIT-750014.svg" alt="License"></a>
+</p>
 
-**[Features](#features) · [Installation](#installation) · [Requirements](#requirements) · [Quick start](#quick-start) · [Development](#development) · [License](#license) · [Website](https://rbgfx.github.io/glyphic/)**
+[Features](#features) · [Installation](#installation) · [Quick Start](#quick-start)
 
----
+***
 
 Glyphic loads BDF bitmap fonts and TrueType outlines, measures UTF-8 text, and draws it onto Tessel RGBA8 images.
 
@@ -39,12 +44,12 @@ Or install the released gem:
 gem install glyphic
 ~~~
 
-## Requirements
+### Requirements
 
 - Ruby 3.1 or newer.
 - Tessel is installed automatically as a runtime dependency.
 
-## Quick start
+## Quick Start
 
 ~~~ruby
 require "glyphic"
@@ -65,6 +70,10 @@ fonts are supported; CFF/OpenType outlines are currently unsupported.
 bundle install
 bundle exec rake verify
 ~~~
+
+## Contributing
+
+Bug reports and pull requests are welcome at [rbgfx/glyphic](https://github.com/rbgfx/glyphic).
 
 ## License
 
