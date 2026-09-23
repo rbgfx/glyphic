@@ -1,17 +1,14 @@
 # Glyphic
 
-[![Gem version](https://badge.fury.io/rb/glyphic.svg)](https://rubygems.org/gems/glyphic)
-[![Downloads](https://img.shields.io/gem/dt/glyphic?label=downloads)](https://rubygems.org/gems/glyphic)
-[![CI](https://github.com/rbgfx/glyphic/actions/workflows/main.yml/badge.svg)](https://github.com/rbgfx/glyphic/actions/workflows/main.yml)
-[![Ruby](https://img.shields.io/badge/ruby-%3E%3D3.1-CC342D?logo=ruby&logoColor=white)](https://www.ruby-lang.org/)
-[![License](https://img.shields.io/badge/license-MIT-750014.svg)](LICENSE.txt)
-
 > Bitmap and outline font rendering for Ruby graphics.
 
-Glyphic loads BDF bitmap fonts and TrueType outlines, measures UTF-8 text, and
-draws it onto Tessel RGBA8 images.
+[![Gem version](https://badge.fury.io/rb/glyphic.svg)](https://rubygems.org/gems/glyphic) [![Downloads](https://img.shields.io/gem/dt/glyphic?label=downloads)](https://rubygems.org/gems/glyphic) [![Ruby](https://img.shields.io/badge/ruby-%3E%3D3.1-CC342D?logo=ruby&logoColor=white)](https://www.ruby-lang.org/) [![CI](https://github.com/rbgfx/glyphic/actions/workflows/main.yml/badge.svg)](https://github.com/rbgfx/glyphic/actions/workflows/main.yml) [![License](https://img.shields.io/badge/license-MIT-750014.svg)](LICENSE.txt)
 
-**[Features](#features) · [Installation](#installation) · [Quick start](#quick-start) · [Development](#development)**
+**[Features](#features) · [Installation](#installation) · [Requirements](#requirements) · [Quick start](#quick-start) · [Development](#development) · [License](#license) · [Website](https://rbgfx.github.io/glyphic/)**
+
+---
+
+Glyphic loads BDF bitmap fonts and TrueType outlines, measures UTF-8 text, and draws it onto Tessel RGBA8 images.
 
 ## Features
 
@@ -41,6 +38,11 @@ Or install the released gem:
 ~~~sh
 gem install glyphic
 ~~~
+
+## Requirements
+
+- Ruby 3.1 or newer.
+- Tessel is installed automatically as a runtime dependency.
 
 ## Quick start
 
