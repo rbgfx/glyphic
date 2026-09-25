@@ -5,7 +5,7 @@ require_relative "lib/glyphic/version"
 Gem::Specification.new do |spec|
   spec.name = "glyphic"
   spec.version = Glyphic::VERSION
-  spec.authors = ["ydah"]
+  spec.authors = ["Yudai Takada"]
   spec.email = ["t.yudai92@gmail.com"]
 
   spec.summary = "Bitmap and outline font rendering for Ruby graphics"
