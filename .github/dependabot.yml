@@ -8,6 +8,8 @@ updates:
       default-days: 7
     # Sibling repos are unavailable to the isolated updater.
     ignore:
+      - dependency-name: metaco
+      - dependency-name: rlsl
       - dependency-name: tessel
   - package-ecosystem: github-actions
     directory: /
