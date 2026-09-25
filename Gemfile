@@ -5,8 +5,6 @@ source "https://rubygems.org"
 # Specify your gem's dependencies in glyphic.gemspec
 gemspec
 
-gem "tessel", path: "../tessel"
-
 gem "irb"
 gem "rake", "~> 13.0"
 
