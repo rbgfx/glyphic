@@ -39,6 +39,26 @@ RSpec.describe Glyphic do
     expect(font.glyph("A").width).to eq(3)
   end
 
+  it "rejects incomplete BDF glyphs" do
+    bdf = <<~BDF
+      STARTFONT 2.1
+      FONT_ASCENT 7
+      STARTCHAR A
+      ENCODING 65
+      DWIDTH 6 0
+      BBX 3 2 0 0
+      BITMAP
+      E0
+      A0
+      ENDCHAR
+      ENDFONT
+    BDF
+    ["BBX 3 2 0 0\n", "BITMAP\n", "A0\n", "DWIDTH 6 0\n", "ENDCHAR\n"].each do |line|
+      source = bdf.sub(line, "")
+      expect { Glyphic::BDF.load(source) }.to raise_error(Glyphic::UnsupportedError, /invalid BDF glyph/)
+    end
+  end
+
   it "reports skipped BDF glyphs" do
     bdf = <<~BDF
       STARTFONT 2.1

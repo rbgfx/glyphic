@@ -123,12 +123,17 @@ module Glyphic
           block << lines[index]
           index += 1
         end
+        raise UnsupportedError, "invalid BDF glyph terminator" unless lines[index] == "ENDCHAR"
+
         encoded = block.find { |line| line.start_with?("ENCODING") }&.split&.last
         code = encoded&.to_i
         if code && code >= 0
           code = jis_to_unicode(code) if registry.start_with?("JISX0208")
           if code
-            glyph = parse_glyph(block, advance: block.find { |line| line.start_with?("DWIDTH") }&.split&.last.to_i)
+            advance = block.find { |line| line.start_with?("DWIDTH ") }&.split&.[](1)
+            raise UnsupportedError, "invalid BDF glyph advance" unless advance&.match?(/\A-?\d+\z/)
+
+            glyph = parse_glyph(block, advance: advance.to_i)
             glyphs[code] = glyph
           else
             skipped += 1
@@ -142,10 +147,16 @@ module Glyphic
     end
 
     def parse_glyph(block, advance:)
-      bbx = block.find { |line| line.start_with?("BBX") }.split.drop(1).map(&:to_i)
+      bbx = block.find { |line| line.start_with?("BBX ") }&.split&.drop(1)&.map { |value| Integer(value, exception: false) }
+      raise UnsupportedError, "invalid BDF glyph bounds" unless bbx&.length == 4 && bbx.all? && bbx[0] >= 0 && bbx[1] >= 0
+
       width, height, offset_x, offset_y = bbx
       bitmap_start = block.index("BITMAP")
+      raise UnsupportedError, "invalid BDF glyph bitmap" unless bitmap_start
+
       rows = block[(bitmap_start + 1), height].to_a
+      raise UnsupportedError, "invalid BDF glyph bitmap" unless rows.length == height && rows.all? { |row| row.match?(/\A[0-9A-Fa-f]*\z/) && row.length * 4 >= width }
+
       alpha = rows.map do |line|
         value = line.to_i(16)
         (0...width).map { |x| (value & (1 << ([line.length * 4, width].max - x - 1))).positive? ? 255 : 0 }
