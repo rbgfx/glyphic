@@ -196,9 +196,16 @@ module Glyphic
         end
       end
 
-      def u16(data, offset) = data.byteslice(offset, 2).unpack1("n")
-      def i16(data, offset) = data.byteslice(offset, 2).unpack1("s>")
-      def u32(data, offset) = data.byteslice(offset, 4).unpack1("N")
+      def slice(data, offset, length)
+        part = data&.byteslice(offset, length) if offset >= 0 && length >= 0
+        raise UnsupportedError, "invalid TrueType table data" unless part && part.bytesize == length
+
+        part
+      end
+
+      def u16(data, offset) = slice(data, offset, 2).unpack1("n")
+      def i16(data, offset) = slice(data, offset, 2).unpack1("s>")
+      def u32(data, offset) = slice(data, offset, 4).unpack1("N")
     end
 
     class Font < Glyphic::Font
@@ -255,13 +262,14 @@ module Glyphic
 
       def build_cmap(data)
         records = @reader.u16(data, 2).times.map do |index|
-          platform, encoding, offset = data.byteslice(4 + index * 8, 8).unpack("n2N")
+          platform, encoding, offset = @reader.slice(data, 4 + index * 8, 8).unpack("n2N")
           [platform, encoding, offset]
         end
         selected = records.sort_by { |platform, encoding, _| platform == 3 && encoding == 10 ? 0 : platform == 3 && encoding == 1 ? 1 : platform.zero? ? 2 : 3 }.find { |_, _, offset| [4, 12].include?(@reader.u16(data, offset)) }
         return {} unless selected
         format = @reader.u16(data, selected[2])
-        format == 12 ? cmap12(data.byteslice(selected[2]..)) : cmap4(data.byteslice(selected[2]..))
+        subtable = @reader.slice(data, selected[2], data.bytesize - selected[2])
+        format == 12 ? cmap12(subtable) : cmap4(subtable)
       end
 
       def build_kern(data)
@@ -275,7 +283,7 @@ module Glyphic
           if coverage & 0xff == 0
             base = offset + 6
             @reader.u16(data, base).times do |index|
-              left, right, value = data.byteslice(base + 8 + index * 6, 6).unpack("n2s>")
+              left, right, value = @reader.slice(data, base + 8 + index * 6, 6).unpack("n2s>")
               pairs[[left, right]] = value
             end
           end
@@ -287,7 +295,7 @@ module Glyphic
       def cmap12(data)
         result = {}
         @reader.u32(data, 12).times do |index|
-          start_code, end_code, start_glyph = data.byteslice(16 + index * 12, 12).unpack("N3")
+          start_code, end_code, start_glyph = @reader.slice(data, 16 + index * 12, 12).unpack("N3")
           (start_code..end_code).each { |code| result[code] = start_glyph + code - start_code }
         end
         result
@@ -295,13 +303,13 @@ module Glyphic
 
       def cmap4(data)
         segments = @reader.u16(data, 6) / 2
-        end_codes = data.byteslice(14, segments * 2).unpack("n*")
+        end_codes = @reader.slice(data, 14, segments * 2).unpack("n*")
         start_offset = 16 + segments * 2
-        start_codes = data.byteslice(start_offset, segments * 2).unpack("n*")
+        start_codes = @reader.slice(data, start_offset, segments * 2).unpack("n*")
         delta_offset = start_offset + segments * 2
-        deltas = data.byteslice(delta_offset, segments * 2).unpack("s>*")
+        deltas = @reader.slice(data, delta_offset, segments * 2).unpack("s>*")
         range_offset = delta_offset + segments * 2
-        offsets = data.byteslice(range_offset, segments * 2).unpack("n*")
+        offsets = @reader.slice(data, range_offset, segments * 2).unpack("n*")
         result = {}
         end_codes.each_index do |segment|
           (start_codes[segment]..end_codes[segment]).each do |code|
@@ -341,26 +349,26 @@ module Glyphic
         finish = glyph_offset(index + 1)
         return [[], [], 0, 0, 0, 0, []] if finish <= offset
 
-        glyph = @glyf.byteslice(offset, finish - offset)
+        glyph = @reader.slice(@glyf, offset, finish - offset)
         contours = @reader.i16(glyph, 0)
         return composite_outline(index, glyph, stack) if contours.negative?
 
-        end_points = glyph.byteslice(10, contours * 2).unpack("n*")
+        end_points = @reader.slice(glyph, 10, contours * 2).unpack("n*")
         point_count = end_points.last.to_i + 1
         cursor = 10 + contours * 2
         instruction_length = @reader.u16(glyph, cursor)
         cursor += 2 + instruction_length
         flags = []
         while flags.length < point_count
-          flag = glyph.getbyte(cursor)
+          flag = @reader.slice(glyph, cursor, 1).getbyte(0)
           cursor += 1
-          repeat = flag.anybits?(8) ? glyph.getbyte(cursor).tap { cursor += 1 } : 0
+          repeat = flag.anybits?(8) ? @reader.slice(glyph, cursor, 1).getbyte(0).tap { cursor += 1 } : 0
           flags.concat([flag] * (repeat + 1))
         end
         xs = read_coordinates(glyph, flags, cursor, point_count, horizontal: true)
         ys = read_coordinates(glyph, flags, xs[1], point_count, horizontal: false)
         raw_points = xs[0].zip(ys[0]).map { |x, y| [x, y] }
-        x_min, y_min, x_max, y_max = glyph.byteslice(2, 8).unpack("s>4")
+        x_min, y_min, x_max, y_max = @reader.slice(glyph, 2, 8).unpack("s>4")
         points, flattened_end_points = flatten_contours(raw_points, flags, end_points)
         [points, flattened_end_points, x_min, y_min, x_max, y_max, raw_points]
       end
@@ -385,11 +393,11 @@ module Glyphic
           cursor += 4
           word_args = flags.anybits?(1)
           arg1, arg2 = if word_args
-            values = glyph.byteslice(cursor, 4).unpack("s>2")
+            values = @reader.slice(glyph, cursor, 4).unpack("s>2")
             cursor += 4
             values
           else
-            values = glyph.byteslice(cursor, 2).unpack("c2")
+            values = @reader.slice(glyph, cursor, 2).unpack("c2")
             cursor += 2
             values
           end
@@ -493,9 +501,9 @@ module Glyphic
 
       def component_transform(glyph, flags, cursor)
         if flags.anybits?(128)
-          glyph.byteslice(cursor, 8).unpack("s>4").map { |value| value / 16_384.0 }
+          @reader.slice(glyph, cursor, 8).unpack("s>4").map { |value| value / 16_384.0 }
         elsif flags.anybits?(64)
-          x, y = glyph.byteslice(cursor, 4).unpack("s>2").map { |value| value / 16_384.0 }
+          x, y = @reader.slice(glyph, cursor, 4).unpack("s>2").map { |value| value / 16_384.0 }
           [x, 0, 0, y]
         elsif flags.anybits?(8)
           scale = @reader.i16(glyph, cursor) / 16_384.0
@@ -519,13 +527,13 @@ module Glyphic
           short = horizontal ? flag.anybits?(2) : flag.anybits?(4)
           same = horizontal ? flag.anybits?(16) : flag.anybits?(32)
           if short
-            delta = glyph.getbyte(cursor)
+            delta = @reader.slice(glyph, cursor, 1).getbyte(0)
             cursor += 1
             delta = -delta if !same
           elsif same
             delta = 0
           else
-            delta = glyph.byteslice(cursor, 2).unpack1("s>")
+            delta = @reader.slice(glyph, cursor, 2).unpack1("s>")
             cursor += 2
           end
           previous += delta

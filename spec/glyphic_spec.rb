@@ -88,6 +88,19 @@ RSpec.describe Glyphic do
     end
   end
 
+  it "rejects empty required TrueType tables" do
+    tags = %w[head hhea maxp hmtx loca glyf cmap]
+    offset = 12 + tags.length * 16
+    bytes = "\0\1\0\0".b + [tags.length, 0, 0, 0].pack("n4")
+    tags.each { |tag| bytes << tag << [0, offset, 0].pack("N3") }
+
+    Dir.mktmpdir do |directory|
+      path = File.join(directory, "empty-tables.ttf")
+      File.binwrite(path, bytes)
+      expect { Glyphic.load(path) }.to raise_error(Glyphic::UnsupportedError, /invalid TrueType/)
+    end
+  end
+
   it "uses one alpha byte per glyph pixel when drawing" do
     bdf = <<~BDF
       STARTFONT 2.1
