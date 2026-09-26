@@ -172,9 +172,15 @@ module Glyphic
       def initialize(bytes)
         @bytes = bytes.b
         @tables = {}
+        raise UnsupportedError, "invalid TrueType table directory" unless @bytes.bytesize >= 12
+
         count = @bytes.byteslice(4, 2).unpack1("n")
+        raise UnsupportedError, "invalid TrueType table directory" if 12 + count * 16 > @bytes.bytesize
+
         count.times do |index|
           tag, _checksum, offset, length = @bytes.byteslice(12 + index * 16, 16).unpack("a4N3")
+          raise UnsupportedError, "invalid TrueType table data" if offset > @bytes.bytesize || length > @bytes.bytesize - offset
+
           @tables[tag] = @bytes.byteslice(offset, length)
         end
       end

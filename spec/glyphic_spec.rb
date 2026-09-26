@@ -56,6 +56,18 @@ RSpec.describe Glyphic do
     expect(Glyphic::BDF.load(bdf).skipped_glyphs).to eq(1)
   end
 
+  it "rejects truncated TrueType table directories and table data" do
+    header = "\0\1\0\0".b
+    table = header + [1, 0, 0, 0].pack("n4") + "head" + [0, 500, 4].pack("N3")
+    Dir.mktmpdir do |directory|
+      path = File.join(directory, "broken.ttf")
+      [header, table].each do |bytes|
+        File.binwrite(path, bytes)
+        expect { Glyphic.load(path) }.to raise_error(Glyphic::UnsupportedError, /invalid TrueType/)
+      end
+    end
+  end
+
   it "uses one alpha byte per glyph pixel when drawing" do
     bdf = <<~BDF
       STARTFONT 2.1
